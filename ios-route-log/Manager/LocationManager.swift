@@ -54,6 +54,8 @@ final class LocationManager: NSObject {
     // MARK: - プライベート
 
     private let manager = CLLocationManager()
+    /// startUpdating() が呼ばれたが権限待ちで startUpdatingLocation() を保留している状態
+    private var isWantingUpdates = false
 
     override init() {
         super.init()
@@ -78,12 +80,14 @@ final class LocationManager: NSObject {
 
     /// 位置情報の取得を開始する
     func startUpdating() {
+        isWantingUpdates = true
         switch manager.authorizationStatus {
         case .authorizedAlways, .authorizedWhenInUse:
             enableBackgroundUpdatesIfCapable()
             manager.startUpdatingLocation()
         case .notDetermined:
-            // まず権限を要求し、付与されたら locationManagerDidChangeAuthorization で再試行
+            // まず権限を要求する。付与されたら locationManagerDidChangeAuthorization で
+            // isWantingUpdates フラグを見て自動的に startUpdatingLocation() を呼ぶ
             requestPermission()
         default:
             // denied / restricted はユーザーが設定アプリで変更する必要がある
@@ -93,6 +97,7 @@ final class LocationManager: NSObject {
 
     /// 位置情報の取得を停止する
     func stopUpdating() {
+        isWantingUpdates = false
         manager.stopUpdatingLocation()
         manager.allowsBackgroundLocationUpdates = false
     }
@@ -117,16 +122,21 @@ extension LocationManager: CLLocationManagerDelegate {
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+        // 権限待ち中だった場合、許可されたら即座に位置情報取得を開始する
+        if isWantingUpdates,
+           authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse {
+            enableBackgroundUpdatesIfCapable()
+            manager.startUpdatingLocation()
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
 
         // 水平精度チェック
-        //   - horizontalAccuracy < 0: 精度不明（無効データ）
-        //   - horizontalAccuracy >= 100: 精度が悪すぎる（100m 以上の誤差）
-        guard location.horizontalAccuracy >= 0,
-              location.horizontalAccuracy < 100 else { return }
+        //   - horizontalAccuracy < 0: 精度不明（無効データ）として除外
+        //   - 上限は設けない。室内・シミュレーターでは 100m 超えも普通に返るため
+        guard location.horizontalAccuracy >= 0 else { return }
 
         currentLocation = location
         locationError = nil
