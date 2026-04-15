@@ -232,10 +232,15 @@ struct HistoryRowView: View {
 
             // 緯度・経度（住所がある場合のみ）
             if let address = record.address, !address.isEmpty {
-                Text(String(format: "%.6f, %.6f", record.latitude, record.longitude))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .padding(.leading, 22)
+                Label {
+                    Text(String(format: "%.6f, %.6f", record.latitude, record.longitude))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                } icon: {
+                    Image(systemName: "location.fill")
+                        .font(.subheadline)
+                        .opacity(0)
+                }
             }
 
             // 速度・前地点からの距離
