@@ -141,6 +141,7 @@ struct DaySummaryRowView: View {
 struct DayDetailView: View {
     @Query private var records: [LocationRecord]
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     let date: Date
 
@@ -166,9 +167,21 @@ struct DayDetailView: View {
             .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
         .toolbar {
-            EditButton()
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("戻る")
+                    }
+                }
+                Spacer()
+                EditButton()
+            }
         }
     }
 
