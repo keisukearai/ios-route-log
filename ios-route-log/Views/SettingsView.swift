@@ -18,7 +18,7 @@ struct SettingsView: View {
                 locationPermissionSection
                 aboutSection
             }
-            .contentMargins(.top, 16, for: .scrollContent)
+            .padding(.top, 4)
         }
     }
 

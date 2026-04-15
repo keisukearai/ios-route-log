@@ -21,7 +21,7 @@ struct HomeView: View {
                 controlSection
             }
             .listStyle(.insetGrouped)
-            .contentMargins(.top, 16, for: .scrollContent)
+            .padding(.top, 4)
         }
     }
 
