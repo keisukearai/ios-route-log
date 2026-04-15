@@ -21,7 +21,6 @@ struct HomeView: View {
                 controlSection
             }
             .listStyle(.insetGrouped)
-            .padding(.top, 4)
         }
     }
 

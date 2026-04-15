@@ -18,7 +18,6 @@ struct SettingsView: View {
                 locationPermissionSection
                 aboutSection
             }
-            .padding(.top, 4)
         }
     }
 

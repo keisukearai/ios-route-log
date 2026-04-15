@@ -169,7 +169,6 @@ struct DayDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             EditButton()
-                .controlSize(.small)
         }
     }
 
