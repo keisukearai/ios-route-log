@@ -20,7 +20,6 @@ struct HomeView: View {
                 movementStatsSection
                 controlSection
             }
-            .navigationTitle("MoveLog")
             .listStyle(.insetGrouped)
         }
     }

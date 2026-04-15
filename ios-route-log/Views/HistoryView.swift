@@ -74,7 +74,6 @@ struct HistoryView: View {
                     .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("位置履歴 (\(daySummaries.count)日)")
         }
     }
 }
@@ -140,7 +139,6 @@ struct DayDetailView: View {
             HistoryRowView(record: record)
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(Self.dateFormatter.string(from: summary.date))
         .navigationBarTitleDisplayMode(.inline)
     }
 }

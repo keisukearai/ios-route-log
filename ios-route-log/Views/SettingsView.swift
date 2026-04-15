@@ -18,7 +18,6 @@ struct SettingsView: View {
                 locationPermissionSection
                 aboutSection
             }
-            .navigationTitle("設定")
         }
     }
 
