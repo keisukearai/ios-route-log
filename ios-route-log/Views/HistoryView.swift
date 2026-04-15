@@ -42,6 +42,8 @@ struct HistoryView: View {
     @Query(sort: \LocationRecord.timestamp, order: .reverse)
     private var records: [LocationRecord]
 
+    @Environment(\.modelContext) private var modelContext
+
     private var daySummaries: [DaySummary] {
         let calendar = Calendar.current
         // startOfDay をキーにしてグループ化
@@ -66,13 +68,25 @@ struct HistoryView: View {
                         description: Text("ホーム画面から記録を開始すると\n位置履歴が表示されます")
                     )
                 } else {
-                    List(daySummaries) { summary in
-                        NavigationLink(destination: DayDetailView(summary: summary)) {
-                            DaySummaryRowView(summary: summary)
+                    List {
+                        ForEach(daySummaries) { summary in
+                            NavigationLink(destination: DayDetailView(date: summary.date)) {
+                                DaySummaryRowView(summary: summary)
+                            }
                         }
+                        .onDelete(perform: deleteDays)
                     }
                     .listStyle(.insetGrouped)
                 }
+            }
+        }
+    }
+
+    private func deleteDays(at offsets: IndexSet) {
+        for index in offsets {
+            let summary = daySummaries[index]
+            for record in summary.records {
+                modelContext.delete(record)
             }
         }
     }
@@ -125,21 +139,43 @@ struct DaySummaryRowView: View {
 // MARK: - 日別詳細（取得間隔単位）
 
 struct DayDetailView: View {
-    let summary: DaySummary
+    @Query private var records: [LocationRecord]
+    @Environment(\.modelContext) private var modelContext
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ja_JP")
-        f.dateFormat = "yyyy年M月d日(E)"
-        return f
-    }()
+    let date: Date
+
+    init(date: Date) {
+        self.date = date
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: date)
+        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        _records = Query(
+            filter: #Predicate<LocationRecord> { record in
+                record.timestamp >= start && record.timestamp < end
+            },
+            sort: \LocationRecord.timestamp,
+            order: .reverse
+        )
+    }
 
     var body: some View {
-        List(summary.records) { record in
-            HistoryRowView(record: record)
+        List {
+            ForEach(records) { record in
+                HistoryRowView(record: record)
+            }
+            .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            EditButton()
+        }
+    }
+
+    private func deleteRecords(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(records[index])
+        }
     }
 }
 
