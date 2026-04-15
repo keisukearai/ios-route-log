@@ -69,10 +69,13 @@ final class RouteViewModel {
     /// 保存済みレコードの速度合計（平均速度の計算に使う）
     private var totalSpeedSum: Double = 0
 
-    /// 逆ジオコーディング用
+    /// 逆ジオコーディング用（表示）
     private let geocoder = CLGeocoder()
     /// 前回ジオコーディングした座標（500m 未満の移動では再取得しない）
     private var lastGeocodedLocation: CLLocation?
+
+    /// 逆ジオコーディング用（レコード保存専用）
+    private let recordGeocoder = CLGeocoder()
 
     // MARK: - 初期化
 
@@ -175,10 +178,16 @@ final class RouteViewModel {
             longitude: location.coordinate.longitude,
             speed: speed,
             distanceFromPrevious: distance,
-            address: currentAddress
+            address: nil
         )
 
         context.insert(record)
+
+        // レコード専用ジオコーダーで住所を非同期取得し、保存後に更新
+        recordGeocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+            guard let self, let placemark = placemarks?.first else { return }
+            record.address = Self.formatAddress(placemark)
+        }
 
         // 集計値をインクリメンタルに更新（全件再集計より効率的）
         totalDistance    += distance
