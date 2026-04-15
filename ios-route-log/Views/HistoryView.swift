@@ -169,6 +169,7 @@ struct DayDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             EditButton()
+                .controlSize(.small)
         }
     }
 
@@ -185,28 +186,33 @@ struct HistoryRowView: View {
     let record: LocationRecord
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // 取得時刻
-            Text(record.timestamp.formatted(date: .omitted, time: .standard))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            // 住所（都道府県＋市区町村）＋緯度・経度
-            if let address = record.address, !address.isEmpty {
-                Label(address, systemImage: "location.fill")
+        VStack(alignment: .leading, spacing: 3) {
+            // 住所（都道府県＋市区町村）＋取得時刻
+            HStack(alignment: .firstTextBaseline) {
+                if let address = record.address, !address.isEmpty {
+                    Label(address, systemImage: "location.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                } else {
+                    Label(
+                        String(format: "%.6f, %.6f", record.latitude, record.longitude),
+                        systemImage: "location.fill"
+                    )
                     .font(.subheadline)
                     .foregroundStyle(.primary)
+                }
+                Spacer()
+                Text(record.timestamp.formatted(date: .omitted, time: .shortened))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // 緯度・経度（住所がある場合のみ）
+            if let address = record.address, !address.isEmpty {
                 Text(String(format: "%.6f, %.6f", record.latitude, record.longitude))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .padding(.leading, 22)
-            } else {
-                Label(
-                    String(format: "%.6f, %.6f", record.latitude, record.longitude),
-                    systemImage: "location.fill"
-                )
-                .font(.subheadline)
-                .foregroundStyle(.primary)
             }
 
             // 速度・前地点からの距離
