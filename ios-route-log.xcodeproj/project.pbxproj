@@ -256,6 +256,7 @@
 				DEVELOPMENT_TEAM = HFZSU3MJLR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MyRouteLog;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "移動経路を記録するために位置情報を使用します。バックグラウンドでの記録には「常に許可」の設定が必要です。取得した位置情報は端末内にのみ保存されます。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "移動経路を記録するために位置情報を使用します。取得した位置情報は端末内にのみ保存されます。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -290,6 +291,7 @@
 				DEVELOPMENT_TEAM = HFZSU3MJLR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MyRouteLog;
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "移動経路を記録するために位置情報を使用します。バックグラウンドでの記録には「常に許可」の設定が必要です。取得した位置情報は端末内にのみ保存されます。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "移動経路を記録するために位置情報を使用します。取得した位置情報は端末内にのみ保存されます。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

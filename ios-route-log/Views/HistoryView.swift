@@ -155,13 +155,19 @@ struct HistoryRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // 緯度・経度
-            Label(
-                String(format: "%.6f, %.6f", record.latitude, record.longitude),
-                systemImage: "location.fill"
-            )
-            .font(.subheadline)
-            .foregroundStyle(.primary)
+            // 住所（都道府県＋市区町村）または緯度・経度
+            if let address = record.address, !address.isEmpty {
+                Label(address, systemImage: "location.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+            } else {
+                Label(
+                    String(format: "%.6f, %.6f", record.latitude, record.longitude),
+                    systemImage: "location.fill"
+                )
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+            }
 
             // 速度・前地点からの距離
             HStack(spacing: 16) {

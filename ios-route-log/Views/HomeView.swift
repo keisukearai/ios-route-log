@@ -51,10 +51,13 @@ struct HomeView: View {
         }
     }
 
-    /// 現在の緯度・経度・最終取得時刻
+    /// 現在の緯度・経度・住所・最終取得時刻
     private var currentLocationSection: some View {
         Section("現在の位置情報") {
             if let location = viewModel.currentLocation {
+                if let address = viewModel.currentAddress {
+                    LabeledContent("住所", value: address)
+                }
                 LabeledContent("緯度", value: String(format: "%.6f°", location.coordinate.latitude))
                 LabeledContent("経度", value: String(format: "%.6f°", location.coordinate.longitude))
             } else {

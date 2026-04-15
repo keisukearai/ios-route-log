@@ -33,6 +33,9 @@ final class RouteViewModel {
     /// 最後に受信した位置情報
     var currentLocation: CLLocation?
 
+    /// 現在地の住所（都道府県＋市区町村）
+    var currentAddress: String?
+
     /// 最後に位置情報を受信した時刻
     var lastUpdated: Date?
 
@@ -65,6 +68,11 @@ final class RouteViewModel {
 
     /// 保存済みレコードの速度合計（平均速度の計算に使う）
     private var totalSpeedSum: Double = 0
+
+    /// 逆ジオコーディング用
+    private let geocoder = CLGeocoder()
+    /// 前回ジオコーディングした座標（500m 未満の移動では再取得しない）
+    private var lastGeocodedLocation: CLLocation?
 
     // MARK: - 初期化
 
@@ -112,6 +120,9 @@ final class RouteViewModel {
         // speed が負値（GPS が速度を取得できなかった）場合は 0 に補完
         currentSpeed = max(0, location.speed)
 
+        // 現在地の住所を逆ジオコーディング（500m 未満の移動では再取得しない）
+        reverseGeocodeForDisplay(location)
+
         // 記録中でない場合は保存しない
         guard isTracking else { return }
 
@@ -122,6 +133,25 @@ final class RouteViewModel {
         }
 
         saveLocationRecord(location)
+    }
+
+    /// 表示用住所の逆ジオコーディング（前回から 500m 以上移動した場合のみ実行）
+    private func reverseGeocodeForDisplay(_ location: CLLocation) {
+        if let last = lastGeocodedLocation, location.distance(from: last) < 500 { return }
+        lastGeocodedLocation = location
+
+        geocoder.cancelGeocode()
+        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+            guard let self, let placemark = placemarks?.first else { return }
+            self.currentAddress = Self.formatAddress(placemark)
+        }
+    }
+
+    /// CLPlacemark から都道府県＋市区町村を組み立てる
+    private static func formatAddress(_ placemark: CLPlacemark) -> String {
+        let prefecture = placemark.administrativeArea ?? ""
+        let city = placemark.locality ?? placemark.subAdministrativeArea ?? ""
+        return "\(prefecture)\(city)"
     }
 
     private func saveLocationRecord(_ location: CLLocation) {
@@ -144,7 +174,8 @@ final class RouteViewModel {
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
             speed: speed,
-            distanceFromPrevious: distance
+            distanceFromPrevious: distance,
+            address: currentAddress
         )
 
         context.insert(record)
