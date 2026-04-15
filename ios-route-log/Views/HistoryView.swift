@@ -142,6 +142,7 @@ struct DayDetailView: View {
     @Query private var records: [LocationRecord]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.editMode) private var editMode
 
     let date: Date
 
@@ -174,17 +175,22 @@ struct DayDetailView: View {
                 Button {
                     dismiss()
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("戻る")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .medium))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
                 }
                 Spacer()
-                EditButton()
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                Button {
+                    withAnimation {
+                        editMode?.wrappedValue = editMode?.wrappedValue == .active ? .inactive : .active
+                    }
+                } label: {
+                    Image(systemName: editMode?.wrappedValue == .active ? "checkmark" : "pencil")
+                        .font(.system(size: 16, weight: .medium))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                }
             }
             .background(.bar)
         }
