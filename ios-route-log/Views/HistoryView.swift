@@ -169,8 +169,8 @@ struct DayDetailView: View {
         .listStyle(.insetGrouped)
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack {
                 Button {
                     dismiss()
                 } label: {
@@ -178,10 +178,15 @@ struct DayDetailView: View {
                         Image(systemName: "chevron.left")
                         Text("戻る")
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
                 Spacer()
                 EditButton()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
             }
+            .background(.bar)
         }
     }
 
