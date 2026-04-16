@@ -22,8 +22,7 @@ struct HomeView: View {
                 controlSection
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(lm.tabHome)
-            .navigationBarTitleDisplayMode(.inline)
+            .font(.subheadline)
             .padding(.bottom, 15)
             .toolbarBackground(.hidden, for: .navigationBar)
         }
@@ -104,7 +103,7 @@ struct HomeView: View {
                     }
                     Spacer()
                 }
-                .font(.headline)
+                .font(.subheadline)
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)

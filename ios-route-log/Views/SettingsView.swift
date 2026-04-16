@@ -28,8 +28,6 @@ struct SettingsView: View {
                 debugSection
                 #endif
             }
-            .navigationTitle(languageManager.tabSettings)
-            .navigationBarTitleDisplayMode(.inline)
             .padding(.bottom, 15)
             .toolbarBackground(.hidden, for: .navigationBar)
         }
