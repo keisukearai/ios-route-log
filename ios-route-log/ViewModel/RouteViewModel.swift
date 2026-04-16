@@ -237,6 +237,14 @@ final class RouteViewModel {
         lastUpdated      = records.last?.timestamp
     }
 
+    // MARK: - 間隔変更時の即時保存
+
+    /// 取得間隔が変更されたときに呼ぶ。記録中かつ現在地がある場合のみ即座に1件保存する
+    func saveCurrentLocationOnIntervalChange() {
+        guard isTracking, let location = currentLocation else { return }
+        saveLocationRecord(location)
+    }
+
     // MARK: - Computed Properties
 
     /// 位置情報の権限状態（LocationManager から転送）

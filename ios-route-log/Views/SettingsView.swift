@@ -70,6 +70,9 @@ struct SettingsView: View {
                     if !purchaseService.canUseAllIntervals && !newValue.isFreeAvailable {
                         vm.trackingInterval = .oneHour
                         showPaywall = true
+                    } else {
+                        // 記録中なら現在地を即座に1件保存
+                        viewModel.saveCurrentLocationOnIntervalChange()
                     }
                 }
 

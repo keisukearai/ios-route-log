@@ -79,11 +79,10 @@ struct HomeView: View {
         }
     }
 
-    /// 累計距離・現在速度・平均速度
+    /// 累計距離・平均速度
     private var movementStatsSection: some View {
         Section(lm.movementStatsSection) {
             LabeledContent(lm.totalDistanceLabel, value: formatDistance(viewModel.totalDistance))
-            LabeledContent(lm.currentSpeedLabel,  value: formatSpeed(viewModel.currentSpeed))
             LabeledContent(lm.averageSpeedLabel,  value: formatSpeed(viewModel.averageSpeed))
         }
     }
