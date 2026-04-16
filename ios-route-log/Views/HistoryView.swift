@@ -39,6 +39,8 @@ struct DaySummary: Identifiable {
 // MARK: - 履歴一覧（日単位）
 
 struct HistoryView: View {
+    @Binding var navigationPath: NavigationPath
+
     @Query(sort: \LocationRecord.timestamp, order: .reverse)
     private var records: [LocationRecord]
 
@@ -59,7 +61,7 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if records.isEmpty {
                     ContentUnavailableView(
@@ -70,7 +72,7 @@ struct HistoryView: View {
                 } else {
                     List {
                         ForEach(daySummaries) { summary in
-                            NavigationLink(destination: DayDetailView(date: summary.date)) {
+                            NavigationLink(value: summary.date) {
                                 DaySummaryRowView(summary: summary)
                             }
                         }
@@ -78,6 +80,9 @@ struct HistoryView: View {
                     }
                     .listStyle(.insetGrouped)
                 }
+            }
+            .navigationDestination(for: Date.self) { date in
+                DayDetailView(date: date)
             }
         }
     }
@@ -141,8 +146,6 @@ struct DaySummaryRowView: View {
 struct DayDetailView: View {
     @Query private var records: [LocationRecord]
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.editMode) private var editMode
 
     let date: Date
 
@@ -170,30 +173,6 @@ struct DayDetailView: View {
         .listStyle(.insetGrouped)
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .medium))
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                }
-                Spacer()
-                Button {
-                    withAnimation {
-                        editMode?.wrappedValue = editMode?.wrappedValue == .active ? .inactive : .active
-                    }
-                } label: {
-                    Image(systemName: editMode?.wrappedValue == .active ? "checkmark" : "pencil")
-                        .font(.system(size: 16, weight: .medium))
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                }
-            }
-            .background(.bar)
-        }
     }
 
     private func deleteRecords(at offsets: IndexSet) {
@@ -256,6 +235,7 @@ struct HistoryRowView: View {
 }
 
 #Preview {
-    HistoryView()
+    @Previewable @State var path = NavigationPath()
+    HistoryView(navigationPath: $path)
         .modelContainer(for: LocationRecord.self, inMemory: true)
 }
