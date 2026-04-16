@@ -26,7 +26,7 @@ final class RouteViewModel {
     var isTracking: Bool = false
 
     /// ユーザーが選択した保存インターバル
-    var trackingInterval: TrackingInterval = .thirtyMinutes
+    var trackingInterval: TrackingInterval = .oneHour
 
     // MARK: - 表示用データ
 

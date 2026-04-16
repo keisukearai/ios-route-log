@@ -3,6 +3,7 @@
 //  ios-route-log (MoveLog)
 //
 //  設定画面。取得間隔の変更・言語切替・位置情報権限の状態確認・設定アプリへの遷移。
+//  プレミアム課金状態の表示と購入・復元も行う。
 //
 
 import SwiftUI
@@ -11,16 +12,26 @@ import CoreLocation
 struct SettingsView: View {
     @Environment(RouteViewModel.self) private var viewModel
     @Environment(LanguageManager.self) private var languageManager
+    @Environment(PurchaseService.self) private var purchaseService
+
+    @State private var showPaywall = false
 
     var body: some View {
         NavigationStack {
             Form {
                 languageSection
                 intervalSection
+                premiumSection
                 locationPermissionSection
                 aboutSection
+                #if DEBUG
+                debugSection
+                #endif
             }
             .contentMargins(.bottom, 16, for: .scrollContent)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
     }
 
@@ -41,21 +52,75 @@ struct SettingsView: View {
 
     /// 取得間隔選択
     private var intervalSection: some View {
-        // @Bindable を使って @Observable の viewModel にバインドする
-        // （@Environment で取得した @Observable 型は直接 $ を使えないため）
         let lm = languageManager
         return Section {
             @Bindable var vm = viewModel
-            Picker(lm.trackingIntervalPickerLabel, selection: $vm.trackingInterval) {
-                ForEach(TrackingInterval.allCases) { interval in
-                    Text(interval.localizedLabel(for: lm.language)).tag(interval)
+            VStack(alignment: .leading, spacing: 8) {
+                // セグメントピッカー（全選択肢を表示）
+                Picker(lm.trackingIntervalPickerLabel, selection: $vm.trackingInterval) {
+                    ForEach(TrackingInterval.allCases) { interval in
+                        Text(interval.localizedLabel(for: lm.language)).tag(interval)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: vm.trackingInterval) { _, newValue in
+                    // 無課金ユーザーが有料インターバルを選択しようとした場合
+                    if !purchaseService.canUseAllIntervals && !newValue.isFreeAvailable {
+                        vm.trackingInterval = .oneHour
+                        showPaywall = true
+                    }
+                }
+
+                // 無課金の場合はロックのヒントを表示
+                if !purchaseService.canUseAllIntervals {
+                    Label(lm.intervalLockedHint, systemImage: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .pickerStyle(.segmented)
         } header: {
             Text(lm.locationTrackingIntervalHeader)
         } footer: {
             Text(lm.intervalFooter)
+        }
+    }
+
+    /// プレミアムプランの状態と購入ボタン
+    private var premiumSection: some View {
+        let lm = languageManager
+        return Section {
+            LabeledContent(lm.premiumStatusLabel) {
+                if purchaseService.isPremium {
+                    Label(lm.premiumStatusPremium, systemImage: "crown.fill")
+                        .foregroundStyle(.yellow)
+                        .fontWeight(.medium)
+                } else {
+                    Text(lm.premiumStatusFree)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !purchaseService.isPremium {
+                Button {
+                    showPaywall = true
+                } label: {
+                    Label(lm.upgradeButton, systemImage: "crown")
+                        .foregroundStyle(Color.accentColor)
+                }
+
+                Button(lm.restoreButton) {
+                    Task {
+                        try? await purchaseService.restore()
+                    }
+                }
+                .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(lm.premiumSectionTitle)
+        } footer: {
+            if !purchaseService.isPremium {
+                Text(lm.premiumSectionFooter)
+            }
         }
     }
 
@@ -96,6 +161,21 @@ struct SettingsView: View {
         }
     }
 
+    #if DEBUG
+    /// デバッグ専用: テストモード切替
+    private var debugSection: some View {
+        @Bindable var ps = purchaseService
+        return Section {
+            Toggle(languageManager.testModeLabel, isOn: Binding(
+                get: { purchaseService.isTestMode },
+                set: { purchaseService.isTestMode = $0 }
+            ))
+        } header: {
+            Text(languageManager.testModeSectionTitle)
+        }
+    }
+    #endif
+
     // MARK: - Helper Properties
 
     private var authorizationColor: Color {
@@ -122,4 +202,5 @@ struct SettingsView: View {
     SettingsView()
         .environment(RouteViewModel())
         .environment(LanguageManager())
+        .environment(PurchaseService())
 }

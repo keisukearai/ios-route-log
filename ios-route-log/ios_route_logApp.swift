@@ -16,6 +16,8 @@ struct ios_route_logApp: App {
     @State private var viewModel = RouteViewModel()
     /// アプリ内言語設定。UserDefaults に永続化し全 View で共有
     @State private var languageManager = LanguageManager()
+    /// 課金状態の管理。App Store トランザクションのリスナーを保持する
+    @State private var purchaseService = PurchaseService()
 
     var body: some Scene {
         WindowGroup {
@@ -26,6 +28,8 @@ struct ios_route_logApp: App {
                 .environment(viewModel)
                 // LanguageManager を環境に注入（全 View から @Environment で参照可能）
                 .environment(languageManager)
+                // PurchaseService を環境に注入（全 View から @Environment で参照可能）
+                .environment(purchaseService)
         }
     }
 }

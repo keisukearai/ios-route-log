@@ -24,6 +24,9 @@ enum TrackingInterval: Int, CaseIterable, Identifiable {
     /// 秒単位のインターバル
     var seconds: TimeInterval { TimeInterval(rawValue * 60) }
 
+    /// 無課金ユーザーが選択できるか（1時間のみ無料）
+    var isFreeAvailable: Bool { self == .oneHour }
+
     /// 設定画面・ホーム画面に表示するラベル（日本語固定、後方互換用）
     var label: String { localizedLabel(for: .japanese) }
 

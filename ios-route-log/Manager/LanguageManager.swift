@@ -117,6 +117,39 @@ extension LanguageManager {
                                        "Location data is stored only on your device and is never sent to external servers. This app uses location data solely for recording travel routes.") }
     var languageSectionTitle: String { s("言語", "Language") }
 
+    // MARK: - Premium / Paywall
+
+    var premiumSectionTitle: String     { s("プレミアム", "Premium") }
+    var premiumStatusLabel: String      { s("プラン", "Plan") }
+    var premiumStatusFree: String       { s("無料", "Free") }
+    var premiumStatusPremium: String    { s("プレミアム", "Premium") }
+    var upgradeButton: String           { s("アップグレード", "Upgrade") }
+    var restoreButton: String           { s("購入を復元", "Restore Purchase") }
+    var premiumSectionFooter: String    { s("プレミアムプランでは5分・10分・15分・30分の短い間隔を使用できます。",
+                                           "Premium plan allows shorter intervals: 5, 10, 15, and 30 minutes.") }
+
+    var paywallNavTitle: String  { s("プレミアムプラン", "Premium Plan") }
+    var paywallTitle: String     { s("プレミアムプラン", "Premium Plan") }
+    var paywallSubtitle: String  { s("短いインターバルで\nより詳細なルートを記録",
+                                     "Record more detailed routes\nwith shorter intervals") }
+    var featureShortInterval: String { s("5・10・15・30分の短い取得間隔", "Short intervals: 5, 10, 15, 30 min") }
+    var featureDetailedRoute: String { s("より精密な移動ルートの記録", "More detailed route tracking") }
+    var cancelButton: String     { s("キャンセル", "Cancel") }
+    var errorTitle: String       { s("エラー", "Error") }
+    var okButton: String         { s("OK", "OK") }
+    var purchaseButtonLoading: String { s("読み込み中...", "Loading...") }
+
+    func purchaseButtonWithPrice(_ price: String) -> String {
+        s("\(price) で購入", "Buy for \(price)")
+    }
+
+    var intervalLockedHint: String { s("プレミアムプランが必要です", "Requires Premium plan") }
+
+    #if DEBUG
+    var testModeSectionTitle: String { s("デバッグ", "Debug") }
+    var testModeLabel: String        { s("テストモード（全インターバル解放）", "Test Mode (all intervals unlocked)") }
+    #endif
+
     func authorizationLabel(for status: CLAuthorizationStatus) -> String {
         switch status {
         case .notDetermined:       return s("未設定", "Not Set")
