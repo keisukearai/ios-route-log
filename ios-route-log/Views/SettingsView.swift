@@ -21,8 +21,8 @@ struct SettingsView: View {
             Form {
                 languageSection
                 intervalSection
-                premiumSection
                 locationPermissionSection
+                premiumSection
                 aboutSection
                 #if DEBUG
                 debugSection
@@ -93,6 +93,7 @@ struct SettingsView: View {
             LabeledContent(lm.premiumStatusLabel) {
                 if purchaseService.isPremium {
                     Label(lm.premiumStatusPremium, systemImage: "crown.fill")
+                        .font(.body)
                         .foregroundStyle(.yellow)
                         .fontWeight(.medium)
                 } else {
@@ -106,6 +107,7 @@ struct SettingsView: View {
                     showPaywall = true
                 } label: {
                     Label(lm.upgradeButton, systemImage: "crown")
+                        .font(.body)
                         .foregroundStyle(Color.accentColor)
                 }
 
