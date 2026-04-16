@@ -80,6 +80,8 @@ struct HistoryView: View {
                         .onDelete(perform: deleteDays)
                     }
                     .listStyle(.insetGrouped)
+                    .navigationTitle(lm.tabHistory)
+                    .navigationBarTitleDisplayMode(.inline)
                     .padding(.bottom, 15)
                     .toolbarBackground(.hidden, for: .navigationBar)
                 }
