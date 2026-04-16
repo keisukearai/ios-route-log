@@ -252,6 +252,8 @@ final class RouteViewModel {
     /// 取得間隔が変更されたときに呼ぶ。記録中かつ現在地がある場合のみ即座に1件保存する
     func saveCurrentLocationOnIntervalChange() {
         guard isTracking, let location = currentLocation else { return }
+        // 間隔変更時は distance == 0 によるスキップを無効化するためリセット
+        lastSavedDistance = nil
         saveLocationRecord(location)
     }
 

@@ -202,7 +202,7 @@ struct HistoryRowView: View {
                     .foregroundStyle(.primary)
                 }
                 Spacer()
-                Text(record.timestamp.formatted(date: .omitted, time: .shortened))
+                Text(record.timestamp.formatted(date: .omitted, time: .standard))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
