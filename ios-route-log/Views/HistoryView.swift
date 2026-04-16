@@ -172,7 +172,7 @@ struct DayDetailView: View {
             .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
-        .contentMargins(.bottom, 16, for: .scrollContent)
+        .contentMargins(.bottom, 80, for: .scrollContent)
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
     }
