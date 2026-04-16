@@ -84,6 +84,7 @@ struct SettingsView: View {
             Text(lm.locationTrackingIntervalHeader)
         } footer: {
             Text(lm.intervalFooter)
+                .font(.footnote)
         }
     }
 
@@ -126,6 +127,7 @@ struct SettingsView: View {
         } footer: {
             if !purchaseService.isPremium {
                 Text(lm.premiumSectionFooter)
+                    .font(.footnote)
             }
         }
     }
@@ -152,6 +154,7 @@ struct SettingsView: View {
             Text(lm.locationSectionTitle)
         } footer: {
             Text(lm.locationPermFooter)
+                .font(.footnote)
         }
     }
 
