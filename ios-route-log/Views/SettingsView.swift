@@ -95,7 +95,7 @@ struct SettingsView: View {
                 if purchaseService.isPremium {
                     HStack(spacing: 4) {
                         Image(systemName: "crown.fill")
-                            .imageScale(.small)
+                            .font(.subheadline)
                         Text(lm.premiumStatusPremium)
                     }
                     .foregroundStyle(.yellow)
@@ -112,7 +112,7 @@ struct SettingsView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "crown")
-                            .imageScale(.small)
+                            .font(.subheadline)
                         Text(lm.upgradeButton)
                     }
                     .foregroundStyle(Color.accentColor)
