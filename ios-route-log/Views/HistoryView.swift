@@ -172,9 +172,8 @@ struct DayDetailView: View {
             .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
-        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 50) }
         .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
     }
 
     private func deleteRecords(at offsets: IndexSet) {
