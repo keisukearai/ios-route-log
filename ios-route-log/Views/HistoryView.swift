@@ -80,7 +80,7 @@ struct HistoryView: View {
                         .onDelete(perform: deleteDays)
                     }
                     .listStyle(.insetGrouped)
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 15)
                     .toolbarBackground(.hidden, for: .navigationBar)
                 }
             }
@@ -168,7 +168,7 @@ struct DayDetailView: View {
             .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
-        .padding(.bottom, 18)
+        .padding(.bottom, 15)
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
     }
