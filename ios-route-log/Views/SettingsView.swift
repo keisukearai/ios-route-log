@@ -28,6 +28,7 @@ struct SettingsView: View {
                 debugSection
                 #endif
             }
+            .font(.subheadline)
             .padding(.bottom, 15)
             .toolbarBackground(.hidden, for: .navigationBar)
         }
