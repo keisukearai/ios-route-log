@@ -172,7 +172,7 @@ struct DayDetailView: View {
             .onDelete(perform: deleteRecords)
         }
         .listStyle(.insetGrouped)
-        .safeAreaInset(edge: .bottom) { Color.clear.frame(height: 60) }
+        .padding(.bottom, 50)
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
     }
