@@ -28,7 +28,7 @@ struct SettingsView: View {
                 debugSection
                 #endif
             }
-            .contentMargins(.vertical, 16, for: .scrollContent)
+            .contentMargins(.bottom, 16, for: .scrollContent)
         }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
