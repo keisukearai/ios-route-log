@@ -93,9 +93,13 @@ struct SettingsView: View {
         return Section {
             LabeledContent(lm.premiumStatusLabel) {
                 if purchaseService.isPremium {
-                    Label(lm.premiumStatusPremium, systemImage: "crown.fill")
-                        .foregroundStyle(.yellow)
-                        .fontWeight(.medium)
+                    HStack(spacing: 4) {
+                        Image(systemName: "crown.fill")
+                            .imageScale(.small)
+                        Text(lm.premiumStatusPremium)
+                    }
+                    .foregroundStyle(.yellow)
+                    .fontWeight(.medium)
                 } else {
                     Text(lm.premiumStatusFree)
                         .foregroundStyle(.secondary)
