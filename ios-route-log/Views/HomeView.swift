@@ -11,6 +11,7 @@ import CoreLocation
 
 struct HomeView: View {
     @Environment(RouteViewModel.self) private var viewModel
+    @Environment(LanguageManager.self) private var lm
 
     var body: some View {
         NavigationStack {
@@ -29,16 +30,16 @@ struct HomeView: View {
 
     /// 記録状態・インターバル・エラー表示
     private var recordingStatusSection: some View {
-        Section("記録状態") {
+        Section(lm.recordingStatusSection) {
             HStack(spacing: 10) {
                 // 録中インジケーター
                 Circle()
                     .fill(viewModel.isTracking ? Color.green : Color.gray)
                     .frame(width: 10, height: 10)
-                Text(viewModel.isTracking ? "記録中" : "停止中")
+                Text(viewModel.isTracking ? lm.recordingLabel : lm.stoppedLabel)
                     .fontWeight(.medium)
                 Spacer()
-                Text(viewModel.trackingInterval.label + "ごとに記録")
+                Text(lm.trackingIntervalDisplay(viewModel.trackingInterval))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -54,34 +55,34 @@ struct HomeView: View {
 
     /// 現在の緯度・経度・住所・最終取得時刻
     private var currentLocationSection: some View {
-        Section("現在の位置情報") {
+        Section(lm.currentLocationSection) {
             if let location = viewModel.currentLocation {
                 if let address = viewModel.currentAddress {
-                    LabeledContent("住所", value: address)
+                    LabeledContent(lm.addressLabel, value: address)
                 }
-                LabeledContent("緯度", value: String(format: "%.6f°", location.coordinate.latitude))
-                LabeledContent("経度", value: String(format: "%.6f°", location.coordinate.longitude))
+                LabeledContent(lm.latitudeLabel,  value: String(format: "%.6f°", location.coordinate.latitude))
+                LabeledContent(lm.longitudeLabel, value: String(format: "%.6f°", location.coordinate.longitude))
             } else {
                 HStack(spacing: 8) {
                     ProgressView()
                         .scaleEffect(0.8)
-                    Text("位置情報を取得中...")
+                    Text(lm.fetchingLocation)
                         .foregroundStyle(.secondary)
                 }
             }
 
             if let updated = viewModel.lastUpdated {
-                LabeledContent("最終取得", value: updated.formatted(date: .abbreviated, time: .shortened))
+                LabeledContent(lm.lastUpdatedLabel, value: updated.formatted(date: .abbreviated, time: .shortened))
             }
         }
     }
 
     /// 累計距離・現在速度・平均速度
     private var movementStatsSection: some View {
-        Section("移動統計") {
-            LabeledContent("累計移動距離", value: formatDistance(viewModel.totalDistance))
-            LabeledContent("現在速度",     value: formatSpeed(viewModel.currentSpeed))
-            LabeledContent("平均速度",     value: formatSpeed(viewModel.averageSpeed))
+        Section(lm.movementStatsSection) {
+            LabeledContent(lm.totalDistanceLabel, value: formatDistance(viewModel.totalDistance))
+            LabeledContent(lm.currentSpeedLabel,  value: formatSpeed(viewModel.currentSpeed))
+            LabeledContent(lm.averageSpeedLabel,  value: formatSpeed(viewModel.averageSpeed))
         }
     }
 
@@ -92,10 +93,10 @@ struct HomeView: View {
                 HStack {
                     Spacer()
                     if viewModel.isTracking {
-                        Label("記録を停止する", systemImage: "stop.circle.fill")
+                        Label(lm.stopRecording, systemImage: "stop.circle.fill")
                             .foregroundStyle(.red)
                     } else {
-                        Label("記録を開始する", systemImage: "play.circle.fill")
+                        Label(lm.startRecording, systemImage: "play.circle.fill")
                             .foregroundStyle(.blue)
                     }
                     Spacer()
@@ -106,7 +107,7 @@ struct HomeView: View {
             .buttonStyle(.plain)
         } footer: {
             if viewModel.authorizationStatus == .denied || viewModel.authorizationStatus == .restricted {
-                Text("位置情報の権限が必要です。設定画面から許可してください。")
+                Text(lm.locationPermRequired)
                     .foregroundStyle(.red)
             }
         }
@@ -126,4 +127,5 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .environment(RouteViewModel())
+        .environment(LanguageManager())
 }

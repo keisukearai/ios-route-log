@@ -14,6 +14,8 @@ import SwiftData
 struct ios_route_logApp: App {
     /// アプリ全体で共有する ViewModel。@State で保持しないと環境注入が安定しない
     @State private var viewModel = RouteViewModel()
+    /// アプリ内言語設定。UserDefaults に永続化し全 View で共有
+    @State private var languageManager = LanguageManager()
 
     var body: some Scene {
         WindowGroup {
@@ -22,6 +24,8 @@ struct ios_route_logApp: App {
                 .modelContainer(for: LocationRecord.self)
                 // RouteViewModel を環境に注入（全 View から @Environment で参照可能）
                 .environment(viewModel)
+                // LanguageManager を環境に注入（全 View から @Environment で参照可能）
+                .environment(languageManager)
         }
     }
 }

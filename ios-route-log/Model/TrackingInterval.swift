@@ -22,12 +22,24 @@ enum TrackingInterval: Int, CaseIterable, Identifiable {
     /// 秒単位のインターバル
     var seconds: TimeInterval { TimeInterval(rawValue * 60) }
 
-    /// 設定画面・ホーム画面に表示するラベル
-    var label: String {
-        switch self {
-        case .fifteenMinutes: return "15分"
-        case .thirtyMinutes:  return "30分"
-        case .oneHour:        return "1時間"
+    /// 設定画面・ホーム画面に表示するラベル（日本語固定、後方互換用）
+    var label: String { localizedLabel(for: .japanese) }
+
+    /// 言語を指定してラベルを返す
+    func localizedLabel(for language: AppLanguage) -> String {
+        switch language {
+        case .japanese:
+            switch self {
+            case .fifteenMinutes: return "15分"
+            case .thirtyMinutes:  return "30分"
+            case .oneHour:        return "1時間"
+            }
+        case .english:
+            switch self {
+            case .fifteenMinutes: return "15 min"
+            case .thirtyMinutes:  return "30 min"
+            case .oneHour:        return "1 hour"
+            }
         }
     }
 }

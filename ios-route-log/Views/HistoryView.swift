@@ -45,6 +45,7 @@ struct HistoryView: View {
     private var records: [LocationRecord]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(LanguageManager.self) private var lm
 
     private var daySummaries: [DaySummary] {
         let calendar = Calendar.current
@@ -65,9 +66,9 @@ struct HistoryView: View {
             Group {
                 if records.isEmpty {
                     ContentUnavailableView(
-                        "記録なし",
+                        lm.noRecordsTitle,
                         systemImage: "location.slash",
-                        description: Text("ホーム画面から記録を開始すると\n位置履歴が表示されます")
+                        description: Text(lm.noRecordsDescription)
                     )
                 } else {
                     List {
@@ -102,13 +103,7 @@ struct HistoryView: View {
 
 struct DaySummaryRowView: View {
     let summary: DaySummary
-
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "ja_JP")
-        f.dateFormat = "yyyy年M月d日(E)"
-        return f
-    }()
+    @Environment(LanguageManager.self) private var lm
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -118,8 +113,8 @@ struct DaySummaryRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // 日付
-            Text(Self.dateFormatter.string(from: summary.date))
+            // 日付（言語に応じてフォーマット切替）
+            Text(lm.dayDateFormatter.string(from: summary.date))
                 .font(.headline)
 
             // 時間帯
@@ -131,7 +126,7 @@ struct DaySummaryRowView: View {
 
             // 集計情報
             HStack(spacing: 16) {
-                Label("\(summary.count)件", systemImage: "mappin.circle")
+                Label(lm.recordCount(summary.count), systemImage: "mappin.circle")
                 Label(formatDistance(summary.totalDistance), systemImage: "arrow.right")
                 Label(formatSpeed(summary.averageSpeed), systemImage: "speedometer")
             }
@@ -240,4 +235,5 @@ struct HistoryRowView: View {
     @Previewable @State var path = NavigationPath()
     HistoryView(navigationPath: $path)
         .modelContainer(for: LocationRecord.self, inMemory: true)
+        .environment(LanguageManager())
 }

@@ -77,6 +77,9 @@ final class RouteViewModel {
     /// 逆ジオコーディング用（レコード保存専用）
     private let recordGeocoder = CLGeocoder()
 
+    /// ジオコーダーに渡すロケール（言語設定と連動）
+    var preferredLocale: Locale = Locale(identifier: "ja_JP")
+
     // MARK: - 初期化
 
     init(locationManager: LocationManager = LocationManager()) {
@@ -138,23 +141,39 @@ final class RouteViewModel {
         saveLocationRecord(location)
     }
 
+    /// 言語が切り替わったときに呼ぶ。ロケールを更新し現在地を再ジオコーディングする
+    func updateLocale(_ locale: Locale) {
+        preferredLocale = locale
+        lastGeocodedLocation = nil   // キャッシュ無効化 → 次の呼び出しで再取得
+        if let location = currentLocation {
+            reverseGeocodeForDisplay(location)
+        }
+    }
+
     /// 表示用住所の逆ジオコーディング（前回から 500m 以上移動した場合のみ実行）
     private func reverseGeocodeForDisplay(_ location: CLLocation) {
         if let last = lastGeocodedLocation, location.distance(from: last) < 500 { return }
         lastGeocodedLocation = location
 
         geocoder.cancelGeocode()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+        geocoder.reverseGeocodeLocation(location, preferredLocale: preferredLocale) { [weak self] placemarks, _ in
             guard let self, let placemark = placemarks?.first else { return }
-            self.currentAddress = Self.formatAddress(placemark)
+            self.currentAddress = Self.formatAddress(placemark, locale: self.preferredLocale)
         }
     }
 
-    /// CLPlacemark から都道府県＋市区町村を組み立てる
-    private static func formatAddress(_ placemark: CLPlacemark) -> String {
+    /// CLPlacemark から表示用住所文字列を組み立てる
+    ///
+    /// - 日本語: "東京都渋谷区"（都道府県＋市区町村を連結）
+    /// - 英語:   "Shibuya, Tokyo"（市区町村, 都道府県）
+    private static func formatAddress(_ placemark: CLPlacemark, locale: Locale) -> String {
         let prefecture = placemark.administrativeArea ?? ""
         let city = placemark.locality ?? placemark.subAdministrativeArea ?? ""
-        return "\(prefecture)\(city)"
+        if locale.language.languageCode?.identifier == "ja" {
+            return "\(prefecture)\(city)"
+        } else {
+            return [city, prefecture].filter { !$0.isEmpty }.joined(separator: ", ")
+        }
     }
 
     private func saveLocationRecord(_ location: CLLocation) {
@@ -184,9 +203,10 @@ final class RouteViewModel {
         context.insert(record)
 
         // レコード専用ジオコーダーで住所を非同期取得し、保存後に更新
-        recordGeocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
-            guard let self, let placemark = placemarks?.first else { return }
-            record.address = Self.formatAddress(placemark)
+        let locale = preferredLocale
+        recordGeocoder.reverseGeocodeLocation(location, preferredLocale: locale) { [weak self] placemarks, _ in
+            guard self != nil, let placemark = placemarks?.first else { return }
+            record.address = Self.formatAddress(placemark, locale: locale)
         }
 
         // 集計値をインクリメンタルに更新（全件再集計より効率的）
