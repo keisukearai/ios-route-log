@@ -28,7 +28,7 @@ struct SettingsView: View {
                 debugSection
                 #endif
             }
-            .padding(.bottom, 20)
+            .padding(.bottom, 18)
             .toolbarBackground(.hidden, for: .navigationBar)
         }
         .sheet(isPresented: $showPaywall) {

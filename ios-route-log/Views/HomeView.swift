@@ -22,7 +22,7 @@ struct HomeView: View {
                 controlSection
             }
             .listStyle(.insetGrouped)
-            .padding(.bottom, 20)
+            .padding(.bottom, 18)
             .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
