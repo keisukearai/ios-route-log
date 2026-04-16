@@ -22,7 +22,8 @@ struct HomeView: View {
                 controlSection
             }
             .listStyle(.insetGrouped)
-            .contentMargins(.bottom, 16, for: .scrollContent)
+            .padding(.bottom, 20)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 

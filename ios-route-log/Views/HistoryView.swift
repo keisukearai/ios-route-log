@@ -80,7 +80,8 @@ struct HistoryView: View {
                         .onDelete(perform: deleteDays)
                     }
                     .listStyle(.insetGrouped)
-                    .contentMargins(.bottom, 16, for: .scrollContent)
+                    .padding(.bottom, 20)
+                    .toolbarBackground(.hidden, for: .navigationBar)
                 }
             }
             .navigationDestination(for: Date.self) { date in
