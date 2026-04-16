@@ -13,6 +13,8 @@ import Foundation
 /// - この値は「何分経過したら次の1件を保存するか」の閾値として使う
 /// - 間隔が長いほど電池消費が抑えられ、蓄積データ量も減る
 enum TrackingInterval: Int, CaseIterable, Identifiable {
+    case fiveMinutes    = 5
+    case tenMinutes     = 10
     case fifteenMinutes = 15
     case thirtyMinutes  = 30
     case oneHour        = 60
@@ -30,12 +32,16 @@ enum TrackingInterval: Int, CaseIterable, Identifiable {
         switch language {
         case .japanese:
             switch self {
+            case .fiveMinutes:    return "5分"
+            case .tenMinutes:     return "10分"
             case .fifteenMinutes: return "15分"
             case .thirtyMinutes:  return "30分"
             case .oneHour:        return "1時間"
             }
         case .english:
             switch self {
+            case .fiveMinutes:    return "5 min"
+            case .tenMinutes:     return "10 min"
             case .fifteenMinutes: return "15 min"
             case .thirtyMinutes:  return "30 min"
             case .oneHour:        return "1 hour"
