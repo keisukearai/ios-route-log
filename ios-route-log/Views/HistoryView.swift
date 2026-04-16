@@ -202,9 +202,14 @@ struct HistoryRowView: View {
                     .foregroundStyle(.primary)
                 }
                 Spacer()
-                Text(record.timestamp.formatted(date: .omitted, time: .standard))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Text(record.timestamp.formatted(date: .omitted, time: .standard))
+                    if let minutes = record.intervalMinutes {
+                        Text("(\(minutes))")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             // 緯度・経度（住所がある場合のみ）

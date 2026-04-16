@@ -206,7 +206,8 @@ final class RouteViewModel {
             longitude: location.coordinate.longitude,
             speed: speed,
             distanceFromPrevious: distance,
-            address: nil
+            address: nil,
+            intervalMinutes: trackingInterval.rawValue
         )
 
         context.insert(record)

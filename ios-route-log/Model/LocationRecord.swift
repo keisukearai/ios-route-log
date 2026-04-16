@@ -25,6 +25,8 @@ final class LocationRecord {
     var distanceFromPrevious: Double
     /// 逆ジオコーディングで得た都道府県＋市区町村（例: "東京都渋谷区"）
     var address: String?
+    /// 記録時の取得間隔（分）。既存レコードは nil
+    var intervalMinutes: Int?
 
     init(
         id: UUID = UUID(),
@@ -33,7 +35,8 @@ final class LocationRecord {
         longitude: Double,
         speed: Double,
         distanceFromPrevious: Double,
-        address: String? = nil
+        address: String? = nil,
+        intervalMinutes: Int? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -42,5 +45,6 @@ final class LocationRecord {
         self.speed = speed
         self.distanceFromPrevious = distanceFromPrevious
         self.address = address
+        self.intervalMinutes = intervalMinutes
     }
 }
