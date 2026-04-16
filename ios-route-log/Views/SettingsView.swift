@@ -110,8 +110,12 @@ struct SettingsView: View {
                 Button {
                     showPaywall = true
                 } label: {
-                    Label(lm.upgradeButton, systemImage: "crown")
-                        .foregroundStyle(Color.accentColor)
+                    HStack(spacing: 6) {
+                        Image(systemName: "crown")
+                            .imageScale(.small)
+                        Text(lm.upgradeButton)
+                    }
+                    .foregroundStyle(Color.accentColor)
                 }
 
                 Button(lm.restoreButton) {
