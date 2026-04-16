@@ -60,6 +60,9 @@ final class RouteViewModel {
     /// 前回保存した CLLocation（次回の距離計算に使う）
     private var lastSavedLocation: CLLocation?
 
+    /// 前回保存したレコードの distanceFromPrevious（連続 0 スキップ判定に使う）
+    private var lastSavedDistance: Double?
+
     /// 前回保存した時刻（インターバル判定に使う）
     private var lastSaveTime: Date?
 
@@ -188,6 +191,12 @@ final class RouteViewModel {
             distance = 0
         }
 
+        // 前回も今回も distance == 0 なら保存をスキップ（停止中の重複レコードを抑制）
+        if distance == 0, let prev = lastSavedDistance, prev == 0 {
+            lastSaveTime = Date()
+            return
+        }
+
         // speed が負値の場合は 0 に補完
         let speed = max(0, location.speed)
 
@@ -215,8 +224,9 @@ final class RouteViewModel {
         totalSpeedSum    += speed
         averageSpeed      = totalSpeedSum / Double(savedRecordCount)
 
-        lastSavedLocation = location
-        lastSaveTime      = Date()
+        lastSavedLocation  = location
+        lastSavedDistance  = distance
+        lastSaveTime       = Date()
     }
 
     // MARK: - 起動時の集計値復元
