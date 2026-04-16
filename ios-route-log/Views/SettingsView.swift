@@ -145,13 +145,10 @@ struct SettingsView: View {
                     .fontWeight(.medium)
             }
 
-            // 「常に許可」以外の場合、設定アプリへの誘導を表示
-            if viewModel.authorizationStatus != .authorizedAlways {
-                Button {
-                    openAppSettings()
-                } label: {
-                    Label(lm.openSettingsApp, systemImage: "arrow.up.right.square")
-                }
+            Button {
+                openAppSettings()
+            } label: {
+                Label(lm.openSettingsApp, systemImage: "arrow.up.right.square")
             }
         } header: {
             Text(lm.locationSectionTitle)
