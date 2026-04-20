@@ -137,6 +137,7 @@ struct DaySummaryRowView: View {
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
     }
 }
 
@@ -148,6 +149,12 @@ struct DayDetailView: View {
     @State private var selectedTab = 0
 
     let date: Date
+
+    static let mmddFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MM/dd"
+        return f
+    }()
 
     init(date: Date) {
         self.date = date
@@ -166,14 +173,19 @@ struct DayDetailView: View {
     var body: some View {
         Group {
             if selectedTab == 0 {
-                HourlyDetailView(records: records)
+                HourlyDetailView(date: date, records: records)
             } else if selectedTab == 1 {
                 List {
-                    ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
-                        let prevRecord = index + 1 < records.count ? records[index + 1] : nil
-                        HistoryRowView(record: record, previousRecord: prevRecord)
+                    Section {
+                        ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
+                            let prevRecord = index + 1 < records.count ? records[index + 1] : nil
+                            HistoryRowView(record: record, previousRecord: prevRecord)
+                        }
+                        .onDelete(perform: deleteRecords)
+                    } header: {
+                        Text(date, formatter: DayDetailView.mmddFormatter)
+                            .font(.caption)
                     }
-                    .onDelete(perform: deleteRecords)
                 }
                 .listStyle(.insetGrouped)
                 .padding(.bottom, 15)
@@ -184,11 +196,6 @@ struct DayDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Text(date.formatted(date: .abbreviated, time: .omitted))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
             ToolbarItem(placement: .principal) {
                 Picker("", selection: $selectedTab) {
                     Image(systemName: "clock").tag(0)
@@ -211,6 +218,7 @@ struct DayDetailView: View {
 // MARK: - 1時間単位サマリ表示
 
 struct HourlyDetailView: View {
+    let date: Date
     let records: [LocationRecord]  // 降順
 
     private struct HourlySummary: Identifiable {
@@ -256,7 +264,8 @@ struct HourlyDetailView: View {
 
     var body: some View {
         List {
-            ForEach(hourlySummaries) { summary in
+            Section {
+                ForEach(hourlySummaries) { summary in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         let hour = Calendar.current.component(.hour, from: summary.hourStart)
@@ -277,6 +286,10 @@ struct HourlyDetailView: View {
                 }
                 .padding(.vertical, 2)
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                }
+            } header: {
+                Text(date, formatter: DayDetailView.mmddFormatter)
+                    .font(.caption)
             }
         }
         .listStyle(.insetGrouped)
