@@ -317,7 +317,7 @@ struct NoteEditSheet: View {
                 TextField(lm.dayNotePlaceholder, text: $text, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                     .padding(.horizontal)
-                    .padding(.top)
+                    .padding(.top, 8)
                     .padding(.bottom, 0)
             }
             .navigationTitle(lm.dayNoteEdit)
