@@ -316,8 +316,9 @@ struct NoteEditSheet: View {
             VStack(alignment: .leading, spacing: 0) {
                 TextField(lm.dayNotePlaceholder, text: $text, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
-                    .padding()
-                Spacer()
+                    .padding(.horizontal)
+                    .padding(.top)
+                    .padding(.bottom, 0)
             }
             .navigationTitle(lm.dayNoteEdit)
             .navigationBarTitleDisplayMode(.inline)
@@ -333,7 +334,7 @@ struct NoteEditSheet: View {
                 }
             }
         }
-        .presentationDetents([.height(200)])
+        .presentationDetents([.height(170)])
     }
 
     private func save() {
