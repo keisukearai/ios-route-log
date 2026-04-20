@@ -166,6 +166,8 @@ struct DayDetailView: View {
     var body: some View {
         Group {
             if selectedTab == 0 {
+                HourlyDetailView(records: records)
+            } else if selectedTab == 1 {
                 List {
                     ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
                         let prevRecord = index + 1 < records.count ? records[index + 1] : nil
@@ -182,13 +184,19 @@ struct DayDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Text(date.formatted(date: .abbreviated, time: .omitted))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             ToolbarItem(placement: .principal) {
                 Picker("", selection: $selectedTab) {
-                    Image(systemName: "list.bullet").tag(0)
-                    Image(systemName: "map").tag(1)
+                    Image(systemName: "clock").tag(0)
+                    Image(systemName: "list.bullet").tag(1)
+                    Image(systemName: "map").tag(2)
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 120)
+                .frame(width: 160)
             }
         }
     }
@@ -197,6 +205,82 @@ struct DayDetailView: View {
         for index in offsets {
             modelContext.delete(records[index])
         }
+    }
+}
+
+// MARK: - 1時間単位サマリ表示
+
+struct HourlyDetailView: View {
+    let records: [LocationRecord]  // 降順
+
+    private struct HourlySummary: Identifiable {
+        var id: Date { hourStart }
+        let hourStart: Date
+        let totalDistance: Double
+        let averageSpeed: Double
+        let recordCount: Int
+        let startTime: Date
+        let endTime: Date
+    }
+
+    private var hourlySummaries: [HourlySummary] {
+        let calendar = Calendar.current
+        var grouped: [Date: [LocationRecord]] = [:]
+        for record in records {
+            let hourStart = calendar.dateInterval(of: .hour, for: record.timestamp)!.start
+            grouped[hourStart, default: []].append(record)
+        }
+        return grouped.compactMap { hourStart, hourRecords -> HourlySummary? in
+            guard !hourRecords.isEmpty else { return nil }
+            let sorted = hourRecords.sorted { $0.timestamp < $1.timestamp }
+            let totalDistance = hourRecords.reduce(0.0) { $0 + $1.distanceFromPrevious }
+            let totalSeconds = hourRecords.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+            let avgSpeed = totalSeconds > 0 ? totalDistance / totalSeconds : 0
+            return HourlySummary(
+                hourStart: hourStart,
+                totalDistance: totalDistance,
+                averageSpeed: avgSpeed,
+                recordCount: hourRecords.count,
+                startTime: sorted.first!.timestamp,
+                endTime: sorted.last!.timestamp
+            )
+        }
+        .sorted { $0.hourStart > $1.hourStart }
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+
+    var body: some View {
+        List {
+            ForEach(hourlySummaries) { summary in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        let hour = Calendar.current.component(.hour, from: summary.hourStart)
+                        Text("\(hour):00")
+                            .font(.headline)
+                        Spacer()
+                        Text("\(Self.timeFormatter.string(from: summary.startTime)) 〜 \(Self.timeFormatter.string(from: summary.endTime))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack(spacing: 16) {
+                        Label(formatDistance(summary.totalDistance), systemImage: "arrow.right")
+                        Label(formatSpeed(summary.averageSpeed), systemImage: "speedometer")
+                        Label("\(summary.recordCount)件", systemImage: "mappin.circle")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 2)
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .padding(.bottom, 15)
     }
 }
 
