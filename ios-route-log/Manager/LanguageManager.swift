@@ -59,6 +59,9 @@ extension LanguageManager {
     var fetchingLocation: String       { s("位置情報を取得中...", "Fetching location...") }
     var lastUpdatedLabel: String       { s("最終取得", "Last Updated") }
     var movementStatsSection: String   { s("移動統計", "Movement Stats") }
+    var statsTodayLabel: String        { s("当日", "Today") }
+    var statsYesterdayLabel: String    { s("前日", "Yesterday") }
+    var statsAllTimeLabel: String      { s("全期間", "All Time") }
     var totalDistanceLabel: String     { s("累計移動距離", "Total Distance") }
     var currentSpeedLabel: String      { s("現在速度", "Current Speed") }
     var averageSpeedLabel: String      { s("平均速度", "Average Speed") }

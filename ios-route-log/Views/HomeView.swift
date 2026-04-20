@@ -17,9 +17,9 @@ struct HomeView: View {
         NavigationStack {
             List {
                 recordingStatusSection
+                controlSection
                 currentLocationSection
                 movementStatsSection
-                controlSection
             }
             .listStyle(.insetGrouped)
             .font(.subheadline)
@@ -79,9 +79,18 @@ struct HomeView: View {
         }
     }
 
-    /// 累計距離・平均速度
+    /// 移動統計（当日・前日・全期間）
+    @ViewBuilder
     private var movementStatsSection: some View {
-        Section(lm.movementStatsSection) {
+        Section(lm.statsTodayLabel) {
+            LabeledContent(lm.totalDistanceLabel, value: formatDistance(viewModel.todayDistance))
+            LabeledContent(lm.averageSpeedLabel,  value: formatSpeed(viewModel.todayAverageSpeed))
+        }
+        Section(lm.statsYesterdayLabel) {
+            LabeledContent(lm.totalDistanceLabel, value: formatDistance(viewModel.yesterdayDistance))
+            LabeledContent(lm.averageSpeedLabel,  value: formatSpeed(viewModel.yesterdayAverageSpeed))
+        }
+        Section(lm.statsAllTimeLabel) {
             LabeledContent(lm.totalDistanceLabel, value: formatDistance(viewModel.totalDistance))
             LabeledContent(lm.averageSpeedLabel,  value: formatSpeed(viewModel.averageSpeed))
         }

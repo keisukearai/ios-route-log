@@ -42,11 +42,23 @@ final class RouteViewModel {
     /// 現在の速度 (m/s)。CLLocation.speed が負値の場合は 0
     var currentSpeed: Double = 0
 
-    /// 保存済みレコードの平均速度 (m/s)
+    /// 保存済みレコードの平均速度 (m/s)。distance > 0 のレコードのみ対象
     var averageSpeed: Double = 0
 
     /// 保存済みレコードの累計移動距離 (m)
     var totalDistance: Double = 0
+
+    /// 当日の累計移動距離 (m)
+    var todayDistance: Double = 0
+
+    /// 当日の平均速度 (m/s)。distance > 0 のレコードのみ対象
+    var todayAverageSpeed: Double = 0
+
+    /// 前日の累計移動距離 (m)
+    var yesterdayDistance: Double = 0
+
+    /// 前日の平均速度 (m/s)。distance > 0 のレコードのみ対象
+    var yesterdayAverageSpeed: Double = 0
 
     // MARK: - 依存オブジェクト
 
@@ -66,11 +78,14 @@ final class RouteViewModel {
     /// 前回保存した時刻（インターバル判定に使う）
     private var lastSaveTime: Date?
 
-    /// 保存済みレコード数（平均速度の計算に使う）
-    private var savedRecordCount: Int = 0
+    /// 全期間: 記録された総時間 (秒)
+    private var allTimeSeconds: Double = 0
 
-    /// 保存済みレコードの速度合計（平均速度の計算に使う）
-    private var totalSpeedSum: Double = 0
+    /// 当日: 記録された総時間 (秒)
+    private var todaySeconds: Double = 0
+
+    /// 前日: 記録された総時間 (秒)
+    private var yesterdaySeconds: Double = 0
 
     /// 逆ジオコーディング用（表示）
     private let geocoder = CLGeocoder()
@@ -220,10 +235,17 @@ final class RouteViewModel {
         }
 
         // 集計値をインクリメンタルに更新（全件再集計より効率的）
-        totalDistance    += distance
-        savedRecordCount += 1
-        totalSpeedSum    += speed
-        averageSpeed      = totalSpeedSum / Double(savedRecordCount)
+        let intervalSeconds = Double(trackingInterval.rawValue * 60)
+        totalDistance += distance
+        allTimeSeconds += intervalSeconds
+        averageSpeed = allTimeSeconds > 0 ? totalDistance / allTimeSeconds : 0
+
+        // 当日分の集計
+        if Calendar.current.isDateInToday(location.timestamp) {
+            todayDistance += distance
+            todaySeconds += intervalSeconds
+            todayAverageSpeed = todaySeconds > 0 ? todayDistance / todaySeconds : 0
+        }
 
         lastSavedLocation  = location
         lastSavedDistance  = distance
@@ -241,11 +263,29 @@ final class RouteViewModel {
         )
         guard let records = try? context.fetch(descriptor), !records.isEmpty else { return }
 
-        totalDistance    = records.reduce(0) { $0 + $1.distanceFromPrevious }
-        savedRecordCount = records.count
-        totalSpeedSum    = records.reduce(0) { $0 + $1.speed }
-        averageSpeed     = savedRecordCount > 0 ? totalSpeedSum / Double(savedRecordCount) : 0
-        lastUpdated      = records.last?.timestamp
+        let cal = Calendar.current
+        let todayStart     = cal.startOfDay(for: Date())
+        let yesterdayStart = cal.date(byAdding: .day, value: -1, to: todayStart)!
+
+        let todayRecs     = records.filter { $0.timestamp >= todayStart }
+        let yesterdayRecs = records.filter { $0.timestamp >= yesterdayStart && $0.timestamp < todayStart }
+
+        // 全期間
+        totalDistance  = records.reduce(0) { $0 + $1.distanceFromPrevious }
+        allTimeSeconds = records.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        averageSpeed   = allTimeSeconds > 0 ? totalDistance / allTimeSeconds : 0
+
+        // 当日
+        todayDistance     = todayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
+        todaySeconds      = todayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        todayAverageSpeed = todaySeconds > 0 ? todayDistance / todaySeconds : 0
+
+        // 前日
+        yesterdayDistance     = yesterdayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
+        yesterdaySeconds      = yesterdayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        yesterdayAverageSpeed = yesterdaySeconds > 0 ? yesterdayDistance / yesterdaySeconds : 0
+
+        lastUpdated = records.last?.timestamp
     }
 
     // MARK: - 間隔変更時の即時保存

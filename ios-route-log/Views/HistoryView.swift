@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import MapKit
 
 // MARK: - 1日分の集計データ
 
@@ -23,10 +24,11 @@ struct DaySummary: Identifiable {
     /// 累計移動距離 (m)
     var totalDistance: Double { records.reduce(0) { $0 + $1.distanceFromPrevious } }
 
-    /// 平均速度 (m/s)
+    /// 平均速度 (m/s) = 総移動距離 ÷ 総記録時間
     var averageSpeed: Double {
-        guard count > 0 else { return 0 }
-        return records.reduce(0) { $0 + $1.speed } / Double(count)
+        let totalSeconds = records.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        guard totalSeconds > 0 else { return 0 }
+        return totalDistance / totalSeconds
     }
 
     /// その日の最初の記録時刻
@@ -143,6 +145,7 @@ struct DaySummaryRowView: View {
 struct DayDetailView: View {
     @Query private var records: [LocationRecord]
     @Environment(\.modelContext) private var modelContext
+    @State private var selectedTab = 0
 
     let date: Date
 
@@ -161,16 +164,33 @@ struct DayDetailView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(records) { record in
-                HistoryRowView(record: record)
+        Group {
+            if selectedTab == 0 {
+                List {
+                    ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
+                        let prevRecord = index + 1 < records.count ? records[index + 1] : nil
+                        HistoryRowView(record: record, previousRecord: prevRecord)
+                    }
+                    .onDelete(perform: deleteRecords)
+                }
+                .listStyle(.insetGrouped)
+                .padding(.bottom, 15)
+            } else {
+                RouteMapView(records: records)
             }
-            .onDelete(perform: deleteRecords)
         }
-        .listStyle(.insetGrouped)
-        .padding(.bottom, 15)
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("", selection: $selectedTab) {
+                    Image(systemName: "list.bullet").tag(0)
+                    Image(systemName: "map").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 120)
+            }
+        }
     }
 
     private func deleteRecords(at offsets: IndexSet) {
@@ -180,10 +200,71 @@ struct DayDetailView: View {
     }
 }
 
+// MARK: - 軌跡地図
+
+struct RouteMapView: View {
+    let records: [LocationRecord]
+
+    private var chronological: [LocationRecord] { records.reversed() }
+
+    private var coordinates: [CLLocationCoordinate2D] {
+        chronological.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+    }
+
+    var body: some View {
+        if chronological.isEmpty {
+            ContentUnavailableView("記録なし", systemImage: "map")
+        } else {
+            Map(initialPosition: .automatic) {
+                if coordinates.count >= 2 {
+                    MapPolyline(coordinates: coordinates)
+                        .stroke(.blue, lineWidth: 3)
+                }
+                if let first = chronological.first {
+                    Annotation("出発", coordinate: CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude)) {
+                        Image(systemName: "figure.walk")
+                            .padding(5)
+                            .background(.green)
+                            .foregroundStyle(.white)
+                            .clipShape(Circle())
+                    }
+                }
+                if chronological.count > 1, let last = chronological.last {
+                    Annotation("到着", coordinate: CLLocationCoordinate2D(latitude: last.latitude, longitude: last.longitude)) {
+                        Image(systemName: "flag.checkered")
+                            .padding(5)
+                            .background(.red)
+                            .foregroundStyle(.white)
+                            .clipShape(Circle())
+                    }
+                }
+            }
+            .mapStyle(.standard)
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+}
+
 // MARK: - 取得間隔単位の行ビュー
 
 struct HistoryRowView: View {
     let record: LocationRecord
+    var previousRecord: LocationRecord? = nil
+
+    private var calculatedSpeedMps: Double {
+        guard record.distanceFromPrevious > 0 else { return 0 }
+        let seconds: Double
+        if let prev = previousRecord {
+            let elapsed = record.timestamp.timeIntervalSince(prev.timestamp)
+            guard elapsed > 0 else { return 0 }
+            seconds = elapsed
+        } else if let minutes = record.intervalMinutes, minutes > 0 {
+            seconds = Double(minutes * 60)
+        } else {
+            return 0
+        }
+        return record.distanceFromPrevious / seconds
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -227,7 +308,7 @@ struct HistoryRowView: View {
 
             // 速度・前地点からの距離
             HStack(spacing: 16) {
-                Label(formatSpeed(record.speed), systemImage: "speedometer")
+                Label(formatSpeed(calculatedSpeedMps), systemImage: "speedometer")
                 Label(formatDistance(record.distanceFromPrevious), systemImage: "arrow.right")
             }
             .font(.caption)
