@@ -26,7 +26,9 @@ final class RouteViewModel {
     var isTracking: Bool = false
 
     /// ユーザーが選択した保存インターバル
-    var trackingInterval: TrackingInterval = .oneHour
+    var trackingInterval: TrackingInterval = TrackingInterval(rawValue: UserDefaults.standard.integer(forKey: "trackingInterval")) ?? .oneHour {
+        didSet { UserDefaults.standard.set(trackingInterval.rawValue, forKey: "trackingInterval") }
+    }
 
     // MARK: - 表示用データ
 
@@ -247,6 +249,10 @@ final class RouteViewModel {
             todayAverageSpeed = todaySeconds > 0 ? todayDistance / todaySeconds : 0
         }
 
+        // 全期間合計をUserDefaultsに永続化（次回起動時の全件フェッチを不要にする）
+        UserDefaults.standard.set(totalDistance, forKey: "totalDistance")
+        UserDefaults.standard.set(allTimeSeconds, forKey: "allTimeSeconds")
+
         lastSavedLocation  = location
         lastSavedDistance  = distance
         lastSaveTime       = Date()
@@ -258,34 +264,51 @@ final class RouteViewModel {
     private func loadSummaryFromStorage() {
         guard let context = modelContext else { return }
 
-        let descriptor = FetchDescriptor<LocationRecord>(
-            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
-        )
-        guard let records = try? context.fetch(descriptor), !records.isEmpty else { return }
-
         let cal = Calendar.current
         let todayStart     = cal.startOfDay(for: Date())
         let yesterdayStart = cal.date(byAdding: .day, value: -1, to: todayStart)!
 
-        let todayRecs     = records.filter { $0.timestamp >= todayStart }
-        let yesterdayRecs = records.filter { $0.timestamp >= yesterdayStart && $0.timestamp < todayStart }
+        // 全期間合計: UserDefaultsから読む。未保存（初回/移行時）は全件フェッチして計算
+        if UserDefaults.standard.object(forKey: "totalDistance") != nil {
+            totalDistance  = UserDefaults.standard.double(forKey: "totalDistance")
+            allTimeSeconds = UserDefaults.standard.double(forKey: "allTimeSeconds")
+            averageSpeed   = allTimeSeconds > 0 ? totalDistance / allTimeSeconds : 0
+        } else {
+            let allDesc = FetchDescriptor<LocationRecord>()
+            if let allRecords = try? context.fetch(allDesc), !allRecords.isEmpty {
+                totalDistance  = allRecords.reduce(0) { $0 + $1.distanceFromPrevious }
+                allTimeSeconds = allRecords.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+                averageSpeed   = allTimeSeconds > 0 ? totalDistance / allTimeSeconds : 0
+                UserDefaults.standard.set(totalDistance, forKey: "totalDistance")
+                UserDefaults.standard.set(allTimeSeconds, forKey: "allTimeSeconds")
+            }
+        }
 
-        // 全期間
-        totalDistance  = records.reduce(0) { $0 + $1.distanceFromPrevious }
-        allTimeSeconds = records.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
-        averageSpeed   = allTimeSeconds > 0 ? totalDistance / allTimeSeconds : 0
+        // 当日・前日: 日付フィルタで絞ってフェッチ（SQLのWHEREで絞るので少量）
+        let recentPredicate = #Predicate<LocationRecord> { $0.timestamp >= yesterdayStart }
+        let recentDescriptor = FetchDescriptor<LocationRecord>(
+            predicate: recentPredicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        guard let recentRecords = try? context.fetch(recentDescriptor) else { return }
 
-        // 当日
+        let todayRecs     = recentRecords.filter { $0.timestamp >= todayStart }
+        let yesterdayRecs = recentRecords.filter { $0.timestamp >= yesterdayStart && $0.timestamp < todayStart }
+
         todayDistance     = todayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
         todaySeconds      = todayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
         todayAverageSpeed = todaySeconds > 0 ? todayDistance / todaySeconds : 0
 
-        // 前日
         yesterdayDistance     = yesterdayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
         yesterdaySeconds      = yesterdayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
         yesterdayAverageSpeed = yesterdaySeconds > 0 ? yesterdayDistance / yesterdaySeconds : 0
 
-        lastUpdated = records.last?.timestamp
+        // 最終更新日時: 最新1件だけ取得
+        var lastDesc = FetchDescriptor<LocationRecord>(
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        lastDesc.fetchLimit = 1
+        lastUpdated = (try? context.fetch(lastDesc))?.first?.timestamp
     }
 
     // MARK: - 間隔変更時の即時保存

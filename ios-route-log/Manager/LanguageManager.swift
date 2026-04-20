@@ -78,6 +78,11 @@ extension LanguageManager {
     var noRecordsDescription: String { s("ホーム画面から記録を開始すると\n位置履歴が表示されます",
                                          "Start recording from Home\nto view location history") }
 
+    var filterOneWeek:  String { s("1週間", "1 Week") }
+    var filterTwoWeeks: String { s("2週間", "2 Weeks") }
+    var filterOneMonth: String { s("1ヶ月", "1 Month") }
+    var filterAll:      String { s("全期間", "All") }
+
     func recordCount(_ n: Int) -> String {
         language == .japanese ? "\(n)件" : (n == 1 ? "1 record" : "\(n) records")
     }
@@ -100,6 +105,15 @@ extension LanguageManager {
         }
         return f
     }
+}
+
+// MARK: - DayNote
+
+extension LanguageManager {
+    var dayNoteAdd: String         { s("メモを追加...", "Add a note...") }
+    var dayNoteEdit: String        { s("メモを編集", "Edit Note") }
+    var dayNotePlaceholder: String { s("この日のメモを入力", "Enter a note for this day") }
+    var dayNoteSave: String        { s("保存", "Save") }
 }
 
 // MARK: - SettingsView

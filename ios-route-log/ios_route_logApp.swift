@@ -23,7 +23,7 @@ struct ios_route_logApp: App {
         WindowGroup {
             ContentView()
                 // SwiftData の ModelContainer を設定（端末内に永続化）
-                .modelContainer(for: LocationRecord.self)
+                .modelContainer(for: [LocationRecord.self, DayNote.self])
                 // RouteViewModel を環境に注入（全 View から @Environment で参照可能）
                 .environment(viewModel)
                 // LanguageManager を環境に注入（全 View から @Environment で参照可能）

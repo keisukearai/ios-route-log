@@ -40,27 +40,57 @@ struct DaySummary: Identifiable {
 
 // MARK: - 履歴一覧（日単位）
 
+// MARK: - フィルター期間
+
+enum HistoryFilter: Int, CaseIterable, Identifiable {
+    case oneWeek = 7
+    case twoWeeks = 14
+    case oneMonth = 30
+    case all = 0
+
+    var id: Int { rawValue }
+
+    func label(for lm: LanguageManager) -> String {
+        switch self {
+        case .oneWeek:  return lm.filterOneWeek
+        case .twoWeeks: return lm.filterTwoWeeks
+        case .oneMonth: return lm.filterOneMonth
+        case .all:      return lm.filterAll
+        }
+    }
+}
+
 struct HistoryView: View {
     @Binding var navigationPath: NavigationPath
 
     @Query(sort: \LocationRecord.timestamp, order: .reverse)
     private var records: [LocationRecord]
 
+    @Query private var dayNotes: [DayNote]
+
     @Environment(\.modelContext) private var modelContext
     @Environment(LanguageManager.self) private var lm
 
-    private var daySummaries: [DaySummary] {
+    @State private var filter: HistoryFilter = .oneWeek
+
+    private var allDaySummaries: [DaySummary] {
         let calendar = Calendar.current
-        // startOfDay をキーにしてグループ化
         var grouped: [Date: [LocationRecord]] = [:]
         for record in records {
             let day = calendar.startOfDay(for: record.timestamp)
             grouped[day, default: []].append(record)
         }
-        // 日付の降順で返す
         return grouped
             .map { DaySummary(date: $0.key, records: $0.value) }
             .sorted { $0.date > $1.date }
+    }
+
+    private var filteredDaySummaries: [DaySummary] {
+        guard filter != .all else { return allDaySummaries }
+        let cutoff = Calendar.current.startOfDay(
+            for: Calendar.current.date(byAdding: .day, value: -(filter.rawValue - 1), to: Date())!
+        )
+        return allDaySummaries.filter { $0.date >= cutoff }
     }
 
     var body: some View {
@@ -74,27 +104,39 @@ struct HistoryView: View {
                     )
                 } else {
                     List {
-                        ForEach(daySummaries) { summary in
+                        ForEach(filteredDaySummaries) { summary in
+                            let note = dayNotes.first { $0.date == summary.date }?.note
                             NavigationLink(value: summary.date) {
-                                DaySummaryRowView(summary: summary)
+                                DaySummaryRowView(summary: summary, note: note)
                             }
                         }
                         .onDelete(perform: deleteDays)
                     }
                     .listStyle(.insetGrouped)
                     .padding(.bottom, 15)
-                    .toolbarBackground(.hidden, for: .navigationBar)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        Picker("", selection: $filter) {
+                            ForEach(HistoryFilter.allCases) { f in
+                                Text(f.label(for: lm)).tag(f)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(.bar)
+                    }
                 }
             }
             .navigationDestination(for: Date.self) { date in
                 DayDetailView(date: date)
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 
     private func deleteDays(at offsets: IndexSet) {
         for index in offsets {
-            let summary = daySummaries[index]
+            let summary = filteredDaySummaries[index]
             for record in summary.records {
                 modelContext.delete(record)
             }
@@ -106,6 +148,7 @@ struct HistoryView: View {
 
 struct DaySummaryRowView: View {
     let summary: DaySummary
+    var note: String? = nil
     @Environment(LanguageManager.self) private var lm
 
     private static let timeFormatter: DateFormatter = {
@@ -135,6 +178,13 @@ struct DaySummaryRowView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+
+            if let note, !note.isEmpty {
+                Label(note, systemImage: "note.text")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
         .padding(.vertical, 2)
         .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
@@ -145,16 +195,15 @@ struct DaySummaryRowView: View {
 
 struct DayDetailView: View {
     @Query private var records: [LocationRecord]
+    @Query private var dayNotes: [DayNote]
     @Environment(\.modelContext) private var modelContext
+    @Environment(LanguageManager.self) private var lm
     @State private var selectedTab = 0
+    @State private var showingNoteSheet = false
 
     let date: Date
 
-    static let mmddFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MM/dd"
-        return f
-    }()
+    private var currentNote: DayNote? { dayNotes.first }
 
     init(date: Date) {
         self.date = date
@@ -167,6 +216,9 @@ struct DayDetailView: View {
             },
             sort: \LocationRecord.timestamp,
             order: .reverse
+        )
+        _dayNotes = Query(
+            filter: #Predicate<DayNote> { $0.date == start }
         )
     }
 
@@ -183,7 +235,7 @@ struct DayDetailView: View {
                         }
                         .onDelete(perform: deleteRecords)
                     } header: {
-                        Text(date, formatter: DayDetailView.mmddFormatter)
+                        Text(lm.dayDateFormatter.string(from: date))
                             .font(.caption)
                     }
                 }
@@ -192,6 +244,32 @@ struct DayDetailView: View {
             } else {
                 RouteMapView(records: records)
             }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Button {
+                showingNoteSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "note.text")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                    Text(currentNote?.note ?? lm.dayNoteAdd)
+                        .font(.subheadline)
+                        .foregroundStyle(currentNote != nil ? .primary : .tertiary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "pencil")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(.bar)
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showingNoteSheet) {
+            NoteEditSheet(date: date, existingNote: currentNote)
         }
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -215,11 +293,71 @@ struct DayDetailView: View {
     }
 }
 
+// MARK: - メモ編集シート
+
+struct NoteEditSheet: View {
+    let date: Date
+    let existingNote: DayNote?
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Environment(LanguageManager.self) private var lm
+
+    @State private var text: String
+
+    init(date: Date, existingNote: DayNote?) {
+        self.date = date
+        self.existingNote = existingNote
+        _text = State(initialValue: existingNote?.note ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+                TextField(lm.dayNotePlaceholder, text: $text, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .padding()
+                Spacer()
+            }
+            .navigationTitle(lm.dayNoteEdit)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(lm.cancelButton) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(lm.dayNoteSave) {
+                        save()
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.height(200)])
+    }
+
+    private func save() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = existingNote {
+            if trimmed.isEmpty {
+                modelContext.delete(existing)
+            } else {
+                existing.note = trimmed
+            }
+        } else if !trimmed.isEmpty {
+            let note = DayNote(date: Calendar.current.startOfDay(for: date), note: trimmed)
+            modelContext.insert(note)
+        }
+    }
+}
+
 // MARK: - 1時間単位サマリ表示
 
 struct HourlyDetailView: View {
     let date: Date
     let records: [LocationRecord]  // 降順
+
+    @Environment(LanguageManager.self) private var lm
 
     private struct HourlySummary: Identifiable {
         var id: Date { hourStart }
@@ -288,7 +426,7 @@ struct HourlyDetailView: View {
                 .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                 }
             } header: {
-                Text(date, formatter: DayDetailView.mmddFormatter)
+                Text(lm.dayDateFormatter.string(from: date))
                     .font(.caption)
             }
         }
