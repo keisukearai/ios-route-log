@@ -253,6 +253,11 @@ final class RouteViewModel {
         UserDefaults.standard.set(totalDistance, forKey: "totalDistance")
         UserDefaults.standard.set(allTimeSeconds, forKey: "allTimeSeconds")
 
+        // 前回保存位置をUserDefaultsに永続化（アプリ再起動後の距離計算継続のため）
+        UserDefaults.standard.set(location.coordinate.latitude,  forKey: "lastSavedLatitude")
+        UserDefaults.standard.set(location.coordinate.longitude, forKey: "lastSavedLongitude")
+        UserDefaults.standard.set(location.timestamp,            forKey: "lastSavedTimestamp")
+
         lastSavedLocation  = location
         lastSavedDistance  = distance
         lastSaveTime       = Date()
@@ -302,6 +307,19 @@ final class RouteViewModel {
         yesterdayDistance     = yesterdayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
         yesterdaySeconds      = yesterdayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
         yesterdayAverageSpeed = yesterdaySeconds > 0 ? yesterdayDistance / yesterdaySeconds : 0
+
+        // 前回保存位置を復元（アプリ再起動をまたいだ距離計算の継続に使う）
+        if let ts = UserDefaults.standard.object(forKey: "lastSavedTimestamp") as? Date {
+            let lat = UserDefaults.standard.double(forKey: "lastSavedLatitude")
+            let lon = UserDefaults.standard.double(forKey: "lastSavedLongitude")
+            lastSavedLocation = CLLocation(
+                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+                altitude: 0,
+                horizontalAccuracy: kCLLocationAccuracyHundredMeters,
+                verticalAccuracy: -1,
+                timestamp: ts
+            )
+        }
 
         // 最終更新日時: 最新1件だけ取得
         var lastDesc = FetchDescriptor<LocationRecord>(
