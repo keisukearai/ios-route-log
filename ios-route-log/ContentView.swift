@@ -11,6 +11,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(RouteViewModel.self) private var viewModel
     @Environment(LanguageManager.self) private var lm
 
@@ -46,6 +47,24 @@ struct ContentView: View {
             viewModel.configure(modelContext: modelContext)
             // 起動時のロケールを同期
             viewModel.updateLocale(lm.geocodeLocale)
+            // 自動開始が有効なら起動時に記録を開始
+            if viewModel.autoStartTracking {
+                viewModel.startTracking()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .active:
+                // フォアグラウンド復帰時に自動開始（同セッション中に手動停止した場合はスキップ）
+                if viewModel.autoStartTracking, !viewModel.userManuallyStopped {
+                    viewModel.startTracking()
+                }
+            case .background:
+                // バックグラウンド移行でフラグをリセット（次回復帰時に自動開始を有効化）
+                viewModel.userManuallyStopped = false
+            default:
+                break
+            }
         }
         .onChange(of: lm.language) { _, _ in
             // 言語切替時にロケールを同期し、現在地住所を再ジオコーディング

@@ -127,8 +127,9 @@ struct HomeView: View {
 
     private func toggleTracking() {
         if viewModel.isTracking {
-            viewModel.stopTracking()
+            viewModel.stopTracking(manually: true)
         } else {
+            viewModel.userManuallyStopped = false
             viewModel.startTracking()
         }
     }

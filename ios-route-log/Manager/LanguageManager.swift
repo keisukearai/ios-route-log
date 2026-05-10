@@ -134,6 +134,13 @@ extension LanguageManager {
                                        "Location data is stored only on your device and is never sent to external servers. This app uses location data solely for recording travel routes.") }
     var languageSectionTitle: String { s("言語", "Language") }
 
+    // MARK: - Auto Start
+
+    var autoStartSectionTitle: String { s("自動開始", "Auto Start") }
+    var autoStartLabel: String        { s("起動時・復帰時に自動で開始する", "Start automatically on launch or foreground") }
+    var autoStartFooter: String       { s("アプリ起動時またはフォアグラウンド復帰時に、記録を自動で開始します。同じセッション中に手動で停止した場合は、他のアプリに切り替えるまで再開しません。",
+                                         "Recording starts automatically when the app launches or returns to the foreground. If stopped manually within the same session, it will not restart until you switch to another app.") }
+
     // MARK: - Premium / Paywall
 
     var premiumSectionTitle: String     { s("プレミアム", "Premium") }

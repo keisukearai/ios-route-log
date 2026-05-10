@@ -30,6 +30,14 @@ final class RouteViewModel {
         didSet { UserDefaults.standard.set(trackingInterval.rawValue, forKey: "trackingInterval") }
     }
 
+    /// 起動時・フォアグラウンド復帰時に自動で記録を開始するか
+    var autoStartTracking: Bool = UserDefaults.standard.bool(forKey: "autoStartTracking") {
+        didSet { UserDefaults.standard.set(autoStartTracking, forKey: "autoStartTracking") }
+    }
+
+    /// ユーザーが手動で停止した（自動開始をスキップするフラグ）
+    var userManuallyStopped: Bool = false
+
     // MARK: - 表示用データ
 
     /// 最後に受信した位置情報
@@ -131,9 +139,10 @@ final class RouteViewModel {
         locationManager.startUpdating()
     }
 
-    func stopTracking() {
+    func stopTracking(manually: Bool = false) {
         guard isTracking else { return }
         isTracking = false
+        if manually { userManuallyStopped = true }
         locationManager.stopUpdating()
     }
 
@@ -300,12 +309,12 @@ final class RouteViewModel {
         let todayRecs     = recentRecords.filter { $0.timestamp >= todayStart }
         let yesterdayRecs = recentRecords.filter { $0.timestamp >= yesterdayStart && $0.timestamp < todayStart }
 
-        todayDistance     = todayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
-        todaySeconds      = todayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        todayDistance = todayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
+        todaySeconds = Self.elapsedSeconds(from: todayRecs)
         todayAverageSpeed = todaySeconds > 0 ? todayDistance / todaySeconds : 0
 
-        yesterdayDistance     = yesterdayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
-        yesterdaySeconds      = yesterdayRecs.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        yesterdayDistance = yesterdayRecs.reduce(0) { $0 + $1.distanceFromPrevious }
+        yesterdaySeconds = Self.elapsedSeconds(from: yesterdayRecs)
         yesterdayAverageSpeed = yesterdaySeconds > 0 ? yesterdayDistance / yesterdaySeconds : 0
 
         // 前回保存位置を復元（アプリ再起動をまたいだ距離計算の継続に使う）
@@ -337,6 +346,20 @@ final class RouteViewModel {
         // 間隔変更時は distance == 0 によるスキップを無効化するためリセット
         lastSavedDistance = nil
         saveLocationRecord(location)
+    }
+
+    // MARK: - Helpers
+
+    /// ソート済みレコード列から実タイムスタンプ差の合算を返す。intervalMinutes に依存しない
+    private static func elapsedSeconds(from records: [LocationRecord]) -> Double {
+        guard records.count > 1 else { return 0 }
+        let sorted = records.sorted { $0.timestamp < $1.timestamp }
+        var seconds: Double = 0
+        for i in 1..<sorted.count {
+            let elapsed = sorted[i].timestamp.timeIntervalSince(sorted[i - 1].timestamp)
+            if elapsed > 0 { seconds += elapsed }
+        }
+        return seconds
     }
 
     // MARK: - Computed Properties

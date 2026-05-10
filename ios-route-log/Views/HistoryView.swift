@@ -24,11 +24,17 @@ struct DaySummary: Identifiable {
     /// 累計移動距離 (m)
     var totalDistance: Double { records.reduce(0) { $0 + $1.distanceFromPrevious } }
 
-    /// 平均速度 (m/s) = 総移動距離 ÷ 総記録時間
+    /// 平均速度 (m/s) = 総移動距離 ÷ 実経過時間
     var averageSpeed: Double {
-        let totalSeconds = records.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
+        let sorted = records.sorted { $0.timestamp < $1.timestamp }
+        var totalSeconds: Double = 0
+        for i in 1..<sorted.count {
+            let elapsed = sorted[i].timestamp.timeIntervalSince(sorted[i - 1].timestamp)
+            if elapsed > 0 { totalSeconds += elapsed }
+        }
         guard totalSeconds > 0 else { return 0 }
-        return totalDistance / totalSeconds
+        let speed = totalDistance / totalSeconds
+        return speed > 41.67 ? 0 : speed  // 150km/h 超は異常値
     }
 
     /// その日の最初の記録時刻
@@ -381,8 +387,20 @@ struct HourlyDetailView: View {
             guard !hourRecords.isEmpty else { return nil }
             let sorted = hourRecords.sorted { $0.timestamp < $1.timestamp }
             let totalDistance = hourRecords.reduce(0.0) { $0 + $1.distanceFromPrevious }
-            let totalSeconds = hourRecords.reduce(0.0) { $0 + Double(($1.intervalMinutes ?? 0) * 60) }
-            let avgSpeed = totalSeconds > 0 ? totalDistance / totalSeconds : 0
+
+            // 連続レコード間の実タイムスタンプ差で経過時間を算出
+            var totalSeconds: Double = 0
+            for i in 1..<sorted.count {
+                let elapsed = sorted[i].timestamp.timeIntervalSince(sorted[i - 1].timestamp)
+                if elapsed > 0 { totalSeconds += elapsed }
+            }
+            // 1件のみの場合は intervalMinutes にフォールバック
+            if sorted.count == 1 {
+                totalSeconds = Double((sorted[0].intervalMinutes ?? 0) * 60)
+            }
+
+            let rawSpeed = totalSeconds >= 1.0 ? totalDistance / totalSeconds : 0
+            let avgSpeed = rawSpeed > 41.67 ? 0 : rawSpeed  // 150km/h 超は異常値
             return HourlySummary(
                 hourStart: hourStart,
                 totalDistance: totalDistance,

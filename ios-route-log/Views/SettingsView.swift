@@ -21,6 +21,7 @@ struct SettingsView: View {
             Form {
                 languageSection
                 intervalSection
+                autoStartSection
                 locationPermissionSection
                 premiumSection
                 aboutSection
@@ -132,6 +133,20 @@ struct SettingsView: View {
                 Text(lm.premiumSectionFooter)
                     .font(.footnote)
             }
+        }
+    }
+
+    /// 自動開始トグル
+    private var autoStartSection: some View {
+        let lm = languageManager
+        return Section {
+            @Bindable var vm = viewModel
+            Toggle(lm.autoStartLabel, isOn: $vm.autoStartTracking)
+        } header: {
+            Text(lm.autoStartSectionTitle)
+        } footer: {
+            Text(lm.autoStartFooter)
+                .font(.footnote)
         }
     }
 
